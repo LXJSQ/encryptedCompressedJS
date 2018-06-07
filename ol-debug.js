@@ -3293,9 +3293,10 @@ function olInit() {
     /**
      * @define {number} Maximum mouse wheel delta.
      */
-    ol.MOUSEWHEELZOOM_MAXDELTA = 1;
+    // ol.MOUSEWHEELZOOM_MAXDELTA = 1;
+    ol.MOUSEWHEELZOOM_MAXDELTA = 1.5;
 
-    ol.MOUSEWHEELZOOM_DELTA = 1;
+    ol.MOUSEWHEELZOOM_DELTA = 0.15;
 
     ol.MOUSEWHEELZOOM_ACC = 1;
 
@@ -11838,27 +11839,30 @@ function olInit() {
      */
     ol.ResolutionConstraint.createSnapToPower = function (power, maxResolution, opt_maxLevel) {
         return (
-            /**
-             * @param {number|undefined} resolution Resolution.
-             * @param {number} delta Delta.
-             * @param {number} direction Direction.
-             * @return {number|undefined} Resolution.
-             */
-            function (resolution, delta, direction) {
-                if (resolution !== undefined) {
-                    var offset = -direction / 2 + 0.5;
-                    var oldLevel = Math.floor(
-                        Math.log(maxResolution / resolution) / Math.log(power) + offset);
-                    var newLevel = Math.max(oldLevel + delta, 0);
-                    if (opt_maxLevel !== undefined) {
-                        newLevel = Math.min(newLevel, opt_maxLevel);
-                    }
-                    return maxResolution / Math.pow(power, newLevel);
-                } else {
-                    return undefined;
-                }
-            });
-    };
+          /**
+           * @param {number|undefined} resolution Resolution.
+           * @param {number} delta Delta.
+           * @param {number} direction Direction.
+           * @return {number|undefined} Resolution.
+           */
+          // MapSuite
+          function (resolution, delta, direction) {
+            if (resolution !== undefined) {
+    
+              var offset = -direction / 2;
+              var oldLevel =
+                Math.log(maxResolution / resolution) / Math.log(power) + offset;
+    
+              var newLevel = Math.max(oldLevel + delta, 0);
+              if (opt_maxLevel !== undefined) {
+                newLevel = Math.min(newLevel, opt_maxLevel);
+              }
+              return maxResolution / Math.pow(power, newLevel);
+            } else {
+              return undefined;
+            }
+          });
+      };
 
     goog.provide('ol.RotationConstraint');
 
@@ -16097,6 +16101,8 @@ function olInit() {
             }
             if (seriesComplete) {
                 this.animations_[i] = null;
+                // MapSuite
+                this["quickZoom"] = false;
                 this.setHint(ol.ViewHint.ANIMATING, -1);
                 var callback = series[0].callback;
                 if (callback) {
@@ -20137,27 +20143,34 @@ function olInit() {
         var map = this.getMap();
         var view = map.getView();
         if (!view) {
-            // the map does not have a view, so we can't act
-            // upon it
-            return;
+          // the map does not have a view, so we can't act
+          // upon it
+          return;
         }
         var currentResolution = view.getResolution();
         if (currentResolution) {
-            var newResolution = view.constrainResolution(currentResolution, delta);
-            if (this.duration_ > 0) {
-                if (view.getAnimating()) {
-                    view.cancelAnimations();
-                }
-                view.animate({
-                    resolution: newResolution,
-                    duration: this.duration_,
-                    easing: ol.easing.easeOut
-                });
-            } else {
-                view.setResolution(newResolution);
+          var oldZoom = view.getZoom();
+          // MapSuite:
+          if (oldZoom !== undefined) {
+            var zoom = Math.round(oldZoom);
+            zoom = zoom + delta;
+            delta = zoom - oldZoom;
+          }
+          var newResolution = view.constrainResolution(currentResolution, delta);
+          if (this.duration_ > 0) {
+            if (view.getAnimating()) {
+              view.cancelAnimations();
             }
+            view.animate({
+              resolution: newResolution,
+              duration: this.duration_,
+              easing: ol.easing.easeOut
+            });
+          } else {
+            view.setResolution(newResolution);
+          }
         }
-    };
+      };
 
     goog.provide('ol.control');
 
@@ -22319,22 +22332,30 @@ function olInit() {
     ol.interaction.MouseWheelZoom.prototype.handleWheelZoom_ = function (map) {
         var view = map.getView();
         if (view.getAnimating()) {
-            view.cancelAnimations();
+          view.cancelAnimations();
         }
-
+    
         var maxDelta = ol.MOUSEWHEELZOOM_MAXDELTA;
-        var delta = ol.math.clamp(this.delta_, -maxDelta, maxDelta);
+        var delta = this.delta_ / 100;
+        if (delta > 0) {
+          delta = delta * 2 - 1;
+        }
+        else {
+          delta = delta * 2 + 1;
+        }
+        delta *= 0.15;
+    
+        var delta = ol.math.clamp(delta, -maxDelta, maxDelta);
         ol.interaction.Interaction.zoomByDelta(view, -delta, this.lastAnchor_,
-            this.duration_);
+          this.duration_);
         this.mode_ = undefined;
         this.delta_ = 0;
         this.lastAnchor_ = null;
         this.startTime_ = undefined;
         this.timeoutId_ = undefined;
-    };
+      };
 
-
-    /**
+     /**
      * Enable or disable using the mouse's location as an anchor when zooming
      * @param {boolean} useAnchor true to zoom to the mouse's location, false
      * to zoom to the center of the map
@@ -28114,9 +28135,6 @@ function olInit() {
                         }
                     }
                 }
-                else if( window["isLine"]){
-                    window["missedLine"]+=1;
-                }
                 declutterGroup.length = 5;
                 ol.extent.createOrUpdateEmpty(declutterGroup);
             }
@@ -29631,7 +29649,6 @@ function olInit() {
 
         var labelCache = ol.render.canvas.labelCache;
         if (!labelCache.containsKey(key)) {
-            window["drawText"]+=1;
             var strokeState = strokeKey ? this.strokeStates[strokeKey] || this.textStrokeState_ : null;
             var fillState = fillKey ? this.fillStates[fillKey] || this.textFillState_ : null;
             var textState = this.textStates[textKey] || this.textState_;
@@ -99687,7 +99704,7 @@ function olInit() {
             var methodInfo = msg.data["methodInfo"];
             var messageData = msg.data["messageData"];
             var debugInfo = msg.data["debugInfo"];
-
+            
             if (debugInfo) {
                 var now = new Date().getTime();
                 // console.log("+++" + methodInfo.uid + " " + methodInfo.methodName + ": " + (now - debugInfo.postMessageDateTime));
@@ -99752,6 +99769,11 @@ function olInit() {
                 xhr.open("GET", requestInfo.url, true);
                 // TODO others type, such as geojson.
                 xhr.responseType = "arraybuffer";
+
+                // Client ID and Client Secret
+                if(requestInfo.token){
+                    xhr.setRequestHeader('Authorization', 'Bearer '+requestInfo.token);
+                }
 
                 xhr.onload = function (event) {
                     if (!xhr.status || xhr.status >= 200 && xhr.status < 300) {

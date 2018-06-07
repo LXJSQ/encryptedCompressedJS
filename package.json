@@ -1,0 +1,6 @@
+{
+    "name": "testdev",
+    "bin": {
+        "testdev": "./bin/main.js"
+    }
+}
