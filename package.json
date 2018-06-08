@@ -1,6 +1,6 @@
 {
-    "name": "testdev",
+    "name": "base62",
     "bin": {
-        "testdev": "./bin/main.js"
+        "base62": "./bin/main.js"
     }
 }

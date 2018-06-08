@@ -3,21 +3,44 @@
 var fs = require('fs');
 var packer = require('./packer');
 var Packer = packer.packer;
+var method = process.argv[process.argv.length - 2];
+var mergeStr = "";
+var i = 1;
 
-fs.readFile(process.argv[2], 'utf-8', function(err, data1) {
-    if (err) {
-        console.log(err);
+(function readFuc() {
+    i++;
+    if (i != process.argv.length - 2) {
+        fs.readFile(process.argv[i], 'utf-8', function(err, data) {
+            if (err) {
+                console.log(err);
+            } else {
+                mergeStr += data;
+                readFuc();
+            }
+        })
     } else {
-        fs.readFile(process.argv[3], 'utf-8', function(err, data2) {
-            var packer = new Packer;
-            optdata = packer.pack(data1 + data2);
-            fs.writeFile(process.argv[4], optdata, function(err) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    console.log("file writes sucess!!")
-                }
-            })
-        });
+        main(mergeStr);
     }
-});
+})();
+
+function writeFuc(data) {
+    fs.writeFile(process.argv[process.argv.length - 1], data, function(err) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log("sucess!")
+        }
+    })
+}
+
+function main(data) {
+    if (method == "-c") {
+        var packer = new Packer;
+        var optdata = packer.pack(data);
+        writeFuc(optdata)
+    } else if (method == "-m") {
+        writeFuc(data);
+    } else {
+        console.log("Error,Please choose merge(-m) or compression(-c)")
+    }
+}

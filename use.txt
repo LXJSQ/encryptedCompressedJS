@@ -1,0 +1,17 @@
+ 
+This tool is a combined and compressed tool based on base62 encoding.
+
+  Provide two startup files:
+     > merge.bat                Merge all the js files in this directory and output the output_merger.js files.
+     > compression.bat		Combine and compress all the js files in this directory, and output the output_compression.js file.
+
+Or you can use the command line for encryption, but you must first use uglifyjs for obfuscation and compression.
+  Example:
+     >uglifyjs ol-debu.js ol.mapsuite.js -o output.js
+     >base62 output.js -m output_merge.js             Merge the js files in this directory and output the output.js files.
+     >base62 output.js -c output_compression.js       Combine and compress the js files in this directory, and output the output.js file.
+
+
+Thank you for using it. If you have any questions, please contact me.
+
+SteveLiu.
